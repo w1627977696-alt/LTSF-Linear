@@ -1,23 +1,20 @@
 # 自定义数据集时间序列预测指南
-# Custom Dataset Time Series Prediction Guide
 
 本指南帮助您使用自己的CSV数据集进行DLinear时间序列预测和可视化。
 
-This guide helps you use your own CSV dataset for DLinear time series prediction and visualization.
+## 目录
 
-## 目录 / Table of Contents
-
-1. [项目结构解析 / Project Structure](#项目结构解析--project-structure)
-2. [数据格式要求 / Data Format Requirements](#数据格式要求--data-format-requirements)
-3. [模型参数说明 / Model Parameters](#模型参数说明--model-parameters)
-4. [快速开始 / Quick Start](#快速开始--quick-start)
-5. [详细使用说明 / Detailed Usage](#详细使用说明--detailed-usage)
-6. [可视化功能 / Visualization](#可视化功能--visualization)
-7. [常见问题 / FAQ](#常见问题--faq)
+1. [项目结构解析](#项目结构解析)
+2. [数据格式要求](#数据格式要求)
+3. [模型参数说明](#模型参数说明)
+4. [快速开始](#快速开始)
+5. [详细使用说明](#详细使用说明)
+6. [可视化功能](#可视化功能)
+7. [常见问题](#常见问题)
 
 ---
 
-## 项目结构解析 / Project Structure
+## 项目结构解析
 
 ```
 LTSF-Linear/
@@ -40,7 +37,7 @@ LTSF-Linear/
 └── CUSTOM_DATASET_GUIDE.md     # 本指南
 ```
 
-### DLinear模型架构 / DLinear Model Architecture
+### DLinear模型架构
 
 DLinear模型通过分解时间序列为趋势(Trend)和季节(Seasonal)两个分量，分别用线性层进行预测：
 
@@ -58,13 +55,13 @@ Linear层预测
 
 ---
 
-## 数据格式要求 / Data Format Requirements
+## 数据格式要求
 
-### CSV文件格式 / CSV File Format
+### CSV文件格式
 
 您的训练和测试CSV文件应具有以下格式：
 
-**格式1：带日期列 / With Date Column**
+**格式1：带日期列**
 ```csv
 date,feature1,feature2,target
 2020-01-01 00:00:00,1.0,2.0,3.0
@@ -73,7 +70,7 @@ date,feature1,feature2,target
 ...
 ```
 
-**格式2：无日期列 / Without Date Column**
+**格式2：无日期列**
 ```csv
 feature1,feature2,target
 1.0,2.0,3.0
@@ -82,7 +79,7 @@ feature1,feature2,target
 ...
 ```
 
-### 重要说明 / Important Notes
+### 重要说明
 
 1. **目标列**: 默认情况下，最后一列被视为目标列。可通过`--target`参数指定其他列。
 2. **特征列**: 除日期和目标外的所有列都是特征列。
@@ -91,39 +88,39 @@ feature1,feature2,target
 
 ---
 
-## 模型参数说明 / Model Parameters
+## 模型参数说明
 
-### 核心参数 / Core Parameters
+### 核心参数
 
-| 参数 / Parameter | 默认值 / Default | 说明 / Description |
-|-----------------|-----------------|---------------------|
-| `--seq_len` | 24 | 输入序列长度（回看窗口）/ Input sequence length (lookback window) |
-| `--pred_len` | 10 | 预测长度（1步或多步）/ Prediction length |
-| `--features` | 'S' | 预测任务类型 / Forecasting task type |
-| `--target` | 'target' | 目标列名 / Target column name |
-| `--individual` | False | 是否为每个通道使用独立的线性层 / Use individual linear layers for each channel |
+| 参数 | 默认值 | 说明 |
+|-----|-------|------|
+| `--seq_len` | 24 | 输入序列长度（回看窗口） |
+| `--pred_len` | 10 | 预测长度（1步或多步） |
+| `--features` | 'S' | 预测任务类型 |
+| `--target` | 'target' | 目标列名 |
+| `--individual` | False | 是否为每个通道使用独立的线性层 |
 
-### Features参数说明 / Features Parameter Options
+### Features参数说明
 
-- **'S'** (Univariate): 单变量预测单变量 - 只使用目标列进行预测
-- **'M'** (Multivariate): 多变量预测多变量 - 使用所有特征预测所有特征
-- **'MS'** (Multivariate→Univariate): 多变量预测单变量 - 使用所有特征预测目标列
+- **'S'** (单变量): 单变量预测单变量 - 只使用目标列进行预测
+- **'M'** (多变量): 多变量预测多变量 - 使用所有特征预测所有特征
+- **'MS'** (多变量→单变量): 多变量预测单变量 - 使用所有特征预测目标列
 
-### 训练参数 / Training Parameters
+### 训练参数
 
-| 参数 / Parameter | 默认值 / Default | 说明 / Description |
-|-----------------|-----------------|---------------------|
-| `--batch_size` | 32 | 批次大小 / Batch size |
-| `--learning_rate` | 0.001 | 学习率 / Learning rate |
-| `--train_epochs` | 50 | 训练轮数 / Number of training epochs |
-| `--patience` | 5 | 早停耐心值 / Early stopping patience |
-| `--val_ratio` | 0.2 | 验证集比例 / Validation split ratio |
+| 参数 | 默认值 | 说明 |
+|-----|-------|------|
+| `--batch_size` | 32 | 批次大小 |
+| `--learning_rate` | 0.001 | 学习率 |
+| `--train_epochs` | 50 | 训练轮数 |
+| `--patience` | 5 | 早停耐心值 |
+| `--val_ratio` | 0.2 | 验证集比例 |
 
 ---
 
-## 快速开始 / Quick Start
+## 快速开始
 
-### 1. 准备数据 / Prepare Data
+### 1. 准备数据
 
 创建训练和测试CSV文件，放在同一目录下：
 
@@ -133,9 +130,9 @@ my_data/
 └── test.csv     # 测试数据
 ```
 
-### 2. 运行预测 / Run Prediction
+### 2. 运行预测
 
-**基本用法 / Basic Usage:**
+**基本用法:**
 ```bash
 python run_custom_prediction.py \
     --root_path ./my_data \
@@ -146,7 +143,7 @@ python run_custom_prediction.py \
     --seq_len 24
 ```
 
-**1步预测 / 1-Step Prediction:**
+**1步预测:**
 ```bash
 python run_custom_prediction.py \
     --root_path ./my_data \
@@ -156,7 +153,7 @@ python run_custom_prediction.py \
     --seq_len 24
 ```
 
-**多变量预测 / Multivariate Prediction:**
+**多变量预测:**
 ```bash
 python run_custom_prediction.py \
     --root_path ./my_data \
@@ -166,7 +163,7 @@ python run_custom_prediction.py \
     --pred_len 10
 ```
 
-### 3. 查看结果 / View Results
+### 3. 查看结果
 
 运行后，输出目录结构如下：
 ```
@@ -185,15 +182,15 @@ output/
 
 ---
 
-## 详细使用说明 / Detailed Usage
+## 详细使用说明
 
-### 完整参数列表 / Complete Parameter List
+### 完整参数列表
 
 ```bash
 python run_custom_prediction.py --help
 ```
 
-**输出 / Output:**
+**输出:**
 ```
 usage: run_custom_prediction.py [-h] --train_path TRAIN_PATH --test_path TEST_PATH
                                  [--root_path ROOT_PATH] [--seq_len SEQ_LEN]
@@ -206,7 +203,7 @@ usage: run_custom_prediction.py [-h] --train_path TRAIN_PATH --test_path TEST_PA
                                  [--no_scale]
 ```
 
-### 示例场景 / Example Scenarios
+### 示例场景
 
 **场景1: 电力负荷预测（单变量）**
 ```bash
@@ -251,15 +248,15 @@ python run_custom_prediction.py \
 
 ---
 
-## 可视化功能 / Visualization
+## 可视化功能
 
-### 使用可视化模块 / Using Visualization Module
+### 使用可视化模块
 
-**方法1: 运行预测时自动生成 / Automatic during prediction**
+**方法1: 运行预测时自动生成**
 
 运行`run_custom_prediction.py`时会自动生成可视化结果。
 
-**方法2: 单独运行可视化脚本 / Run visualization script separately**
+**方法2: 单独运行可视化脚本**
 
 ```bash
 python visualize_predictions.py \
@@ -268,7 +265,7 @@ python visualize_predictions.py \
     --output_dir ./my_visualizations
 ```
 
-### 可视化输出说明 / Visualization Output Description
+### 可视化输出说明
 
 1. **prediction_sample_X.png**: 单个样本的预测对比图
    - 左图：标准化数值
@@ -280,23 +277,23 @@ python visualize_predictions.py \
    - 误差分布直方图
    - 各预测步的MSE
 
-### 在Python中使用可视化类 / Using Visualization Class in Python
+### 在Python中使用可视化类
 
 ```python
 from visualize_predictions import PredictionVisualizer
 import numpy as np
 
-# 加载数据 / Load data
+# 加载数据
 preds = np.load('predictions.npy')
 trues = np.load('ground_truth.npy')
 
-# 创建可视化器 / Create visualizer
+# 创建可视化器
 visualizer = PredictionVisualizer(preds, trues)
 
-# 生成所有图表 / Generate all plots
+# 生成所有图表
 visualizer.plot_all(output_dir='./my_plots')
 
-# 或者单独生成特定图表 / Or generate specific plots
+# 或者单独生成特定图表
 visualizer.plot_scatter(output_path='scatter.png')
 visualizer.plot_error_distribution(output_path='errors.png')
 visualizer.plot_summary(output_path='summary.png')
@@ -304,9 +301,9 @@ visualizer.plot_summary(output_path='summary.png')
 
 ---
 
-## 常见问题 / FAQ
+## 常见问题
 
-### Q1: 数据量太少怎么办？/ What if data is too small?
+### Q1: 数据量太少怎么办？
 
 A: 减小`seq_len`和`batch_size`，增加`val_ratio`：
 ```bash
@@ -317,7 +314,7 @@ python run_custom_prediction.py \
     ...
 ```
 
-### Q2: 如何处理多个目标变量？/ How to handle multiple targets?
+### Q2: 如何处理多个目标变量？
 
 A: 使用`features='M'`进行多变量预测：
 ```bash
@@ -326,7 +323,7 @@ python run_custom_prediction.py \
     ...
 ```
 
-### Q3: 模型不收敛怎么办？/ What if model doesn't converge?
+### Q3: 模型不收敛怎么办？
 
 A: 尝试以下调整：
 1. 减小学习率: `--learning_rate 0.0001`
@@ -334,7 +331,7 @@ A: 尝试以下调整：
 3. 增加耐心值: `--patience 10`
 4. 检查数据是否有异常值
 
-### Q4: 如何只做1步预测？/ How to do 1-step prediction?
+### Q4: 如何只做1步预测？
 
 A: 设置`pred_len=1`：
 ```bash
@@ -343,7 +340,7 @@ python run_custom_prediction.py \
     ...
 ```
 
-### Q5: 训练时内存不足？/ Out of memory during training?
+### Q5: 训练时内存不足？
 
 A: 减小批次大小和序列长度：
 ```bash
@@ -353,7 +350,7 @@ python run_custom_prediction.py \
     ...
 ```
 
-### Q6: 如何使用已训练的模型进行预测？/ How to use trained model for prediction?
+### Q6: 如何使用已训练的模型进行预测？
 
 A: 可以加载保存的checkpoint进行预测：
 ```python
@@ -380,9 +377,9 @@ with torch.no_grad():
 
 ---
 
-## 更多资源 / More Resources
+## 更多资源
 
-- 原始论文 / Original Paper: [Are Transformers Effective for Time Series Forecasting?](https://arxiv.org/abs/2205.13504)
-- GitHub仓库 / GitHub Repository: [LTSF-Linear](https://github.com/cure-lab/LTSF-Linear)
+- 原始论文: [Are Transformers Effective for Time Series Forecasting?](https://arxiv.org/abs/2205.13504)
+- GitHub仓库: [LTSF-Linear](https://github.com/cure-lab/LTSF-Linear)
 
-如有问题，欢迎提Issue！/ Feel free to open an issue if you have questions!
+如有问题，欢迎提Issue！

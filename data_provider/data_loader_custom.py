@@ -1,19 +1,19 @@
 """
-Custom Dataset Loader for separate train/test CSV files.
-This module supports loading your own time series data with separate train and test files.
+自定义数据集加载器，用于加载分离的训练/测试CSV文件。
+本模块支持使用分离的训练和测试文件加载您自己的时间序列数据。
 
-Data Format Requirements:
-1. CSV files with the first column as 'date' (optional, can be index)
-2. Remaining columns are feature columns
-3. The target column should be specified (for S or MS mode)
+数据格式要求:
+1. CSV文件，第一列为'date'（可选，可以用索引代替）
+2. 其余列为特征列
+3. 应指定目标列（用于S或MS模式）
 
-Example CSV structure:
+CSV结构示例:
     date,feature1,feature2,target
     2020-01-01,1.0,2.0,3.0
     2020-01-02,1.1,2.1,3.1
     ...
 
-Or without date column (will use index as date):
+或不带日期列（将使用索引作为日期）:
     feature1,feature2,target
     1.0,2.0,3.0
     1.1,2.1,3.1
@@ -33,30 +33,30 @@ warnings.filterwarnings('ignore')
 
 class Dataset_Custom_Separate(Dataset):
     """
-    Custom Dataset class for loading separate train/test CSV files.
+    用于加载分离的训练/测试CSV文件的自定义数据集类。
     
-    Parameters:
+    参数:
     -----------
     root_path : str
-        Root directory path containing the data files
+        包含数据文件的根目录路径
     flag : str
-        'train', 'val', or 'test' to specify which dataset to load
+        'train', 'val', 或 'test'，指定要加载的数据集
     size : list
-        [seq_len, label_len, pred_len] - sequence lengths for the model
+        [seq_len, label_len, pred_len] - 模型的序列长度
     features : str
-        'S': univariate-to-univariate
-        'M': multivariate-to-multivariate
-        'MS': multivariate-to-univariate
+        'S': 单变量到单变量
+        'M': 多变量到多变量
+        'MS': 多变量到单变量
     train_data_path : str
-        Filename for training data CSV
+        训练数据CSV的文件名
     test_data_path : str
-        Filename for test data CSV  
+        测试数据CSV的文件名
     target : str
-        Target column name (for S or MS mode)
+        目标列名（用于S或MS模式）
     scale : bool
-        Whether to standardize the data
+        是否对数据进行标准化
     val_ratio : float
-        Ratio of training data to use for validation (default: 0.2)
+        用于验证的训练数据比例（默认: 0.2）
     """
     
     def __init__(self, root_path, flag='train', size=None,
@@ -89,15 +89,15 @@ class Dataset_Custom_Separate(Dataset):
     def __read_data__(self):
         self.scaler = StandardScaler()
         
-        # Read training data
+        # 读取训练数据
         train_df = pd.read_csv(os.path.join(self.root_path, self.train_data_path))
-        # Read test data
+        # 读取测试数据
         test_df = pd.read_csv(os.path.join(self.root_path, self.test_data_path))
         
-        # Check if 'date' column exists
+        # 检查是否存在'date'列
         has_date = 'date' in train_df.columns.str.lower()
         
-        # Get column names (excluding date if present)
+        # 获取列名（如果存在则排除date）
         if has_date:
             date_col = [c for c in train_df.columns if c.lower() == 'date'][0]
             cols = [c for c in train_df.columns if c.lower() != 'date']
@@ -105,20 +105,20 @@ class Dataset_Custom_Separate(Dataset):
             date_col = None
             cols = list(train_df.columns)
         
-        # Select features based on mode
+        # 根据模式选择特征
         if self.features == 'M' or self.features == 'MS':
-            # Use all columns as features
+            # 使用所有列作为特征
             df_train = train_df[cols]
             df_test = test_df[cols]
         elif self.features == 'S':
-            # Use only target column
+            # 仅使用目标列
             if self.target in cols:
                 df_train = train_df[[self.target]]
                 df_test = test_df[[self.target]]
             else:
-                raise ValueError(f"Target column '{self.target}' not found in data. Available columns: {cols}")
+                raise ValueError(f"在数据中未找到目标列 '{self.target}'。可用的列: {cols}")
         
-        # Standardize using training data statistics
+        # 使用训练数据统计量进行标准化
         if self.scale:
             self.scaler.fit(df_train.values)
             train_data = self.scaler.transform(df_train.values)
@@ -127,15 +127,15 @@ class Dataset_Custom_Separate(Dataset):
             train_data = df_train.values
             test_data = df_test.values
         
-        # Split training data into train and validation
+        # 将训练数据分为训练集和验证集
         num_train = int(len(train_data) * (1 - self.val_ratio))
         
         if self.flag == 'train':
             self.data_x = train_data[:num_train]
             self.data_y = train_data[:num_train]
         elif self.flag == 'val':
-            # For validation, we need seq_len data points before the validation start
-            # to ensure we can construct complete input sequences for all validation samples
+            # 对于验证集，需要在验证起点之前有seq_len个数据点
+            # 以确保可以为所有验证样本构建完整的输入序列
             val_start = max(0, num_train - self.seq_len)
             self.data_x = train_data[val_start:]
             self.data_y = train_data[val_start:]
@@ -143,7 +143,7 @@ class Dataset_Custom_Separate(Dataset):
             self.data_x = test_data
             self.data_y = test_data
         
-        # Create dummy time stamps (not used by DLinear but needed for compatibility)
+        # 创建虚拟时间戳（DLinear不使用，但为了兼容性需要）
         self.data_stamp = np.zeros((len(self.data_x), 4))
     
     def __getitem__(self, index):
@@ -163,9 +163,9 @@ class Dataset_Custom_Separate(Dataset):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
     
     def inverse_transform(self, data):
-        """Convert standardized data back to original scale."""
+        """将标准化数据转换回原始尺度"""
         return self.scaler.inverse_transform(data)
     
     def get_scaler(self):
-        """Return the fitted scaler for external use."""
+        """返回已拟合的标准化器供外部使用"""
         return self.scaler

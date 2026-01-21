@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Generate sample time series data for testing the custom prediction script.
+生成用于测试自定义预测脚本的样本时间序列数据。
 
-This script generates synthetic time series data with trend, seasonality, and noise
-components for demonstration purposes.
+该脚本生成包含趋势、季节性和噪声成分的合成时间序列数据，用于演示目的。
 
-Usage:
+使用方法:
     python generate_sample_data.py [--output_dir ./sample_data] [--train_size 500] [--test_size 100]
 """
 
@@ -20,60 +19,60 @@ def generate_time_series(n_samples, freq='h', start_date='2020-01-01',
                         trend_slope=0.01, seasonality_period=24, noise_std=0.1,
                         n_features=3):
     """
-    Generate synthetic time series data.
+    生成合成时间序列数据。
     
-    Parameters:
+    参数:
     -----------
     n_samples : int
-        Number of time steps to generate
+        要生成的时间步数
     freq : str
-        Pandas frequency string
+        Pandas频率字符串
     start_date : str
-        Starting date
+        起始日期
     trend_slope : float
-        Slope of linear trend
+        线性趋势的斜率
     seasonality_period : int
-        Period of seasonality (e.g., 24 for daily pattern with hourly data)
+        季节性周期（例如，对于每小时数据，24表示日模式）
     noise_std : float
-        Standard deviation of noise
+        噪声的标准差
     n_features : int
-        Number of additional features to generate
+        要生成的额外特征数量
     
-    Returns:
+    返回:
     --------
     pd.DataFrame
-        DataFrame with date, features, and target columns
+        包含日期、特征和目标列的DataFrame
     """
-    # Generate time index
+    # 生成时间索引
     dates = pd.date_range(start=start_date, periods=n_samples, freq=freq)
     
-    # Generate base signal with trend and seasonality
+    # 生成带有趋势和季节性的基础信号
     t = np.arange(n_samples)
     
-    # Trend component
+    # 趋势成分
     trend = trend_slope * t
     
-    # Seasonality component (multiple patterns)
+    # 季节性成分（多种模式）
     daily_seasonality = 2 * np.sin(2 * np.pi * t / seasonality_period)
     weekly_seasonality = 1 * np.sin(2 * np.pi * t / (7 * seasonality_period))
     
-    # Noise
+    # 噪声
     noise = np.random.normal(0, noise_std, n_samples)
     
-    # Target: combination of components
+    # 目标：各成分的组合
     target = 10 + trend + daily_seasonality + weekly_seasonality + noise
     
-    # Generate correlated features
+    # 生成相关特征
     features = {}
     for i in range(n_features - 1):
-        # Each feature has its own pattern but correlated with target
+        # 每个特征有自己的模式但与目标相关
         feat_seasonality = np.sin(2 * np.pi * t / seasonality_period + i * np.pi / 4)
         feat_noise = np.random.normal(0, noise_std * 2, n_samples)
         features[f'feature_{i+1}'] = (
             5 + 0.5 * target + feat_seasonality + feat_noise
         )
     
-    # Create DataFrame
+    # 创建DataFrame
     df = pd.DataFrame({
         'date': dates,
         **features,
@@ -84,36 +83,36 @@ def generate_time_series(n_samples, freq='h', start_date='2020-01-01',
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate sample time series data')
+    parser = argparse.ArgumentParser(description='生成样本时间序列数据')
     parser.add_argument('--output_dir', type=str, default='./sample_data',
-                       help='Output directory for sample data')
+                       help='样本数据的输出目录')
     parser.add_argument('--train_size', type=int, default=500,
-                       help='Number of training samples')
+                       help='训练样本数量')
     parser.add_argument('--test_size', type=int, default=100,
-                       help='Number of test samples')
+                       help='测试样本数量')
     parser.add_argument('--n_features', type=int, default=3,
-                       help='Number of features (including target)')
+                       help='特征数量（包括目标）')
     parser.add_argument('--seed', type=int, default=42,
-                       help='Random seed')
+                       help='随机种子')
     
     args = parser.parse_args()
     
-    # Set seed for reproducibility
+    # 设置随机种子以确保可重复性
     np.random.seed(args.seed)
     
-    # Create output directory
+    # 创建输出目录
     os.makedirs(args.output_dir, exist_ok=True)
     
-    # Generate training data
-    print(f"Generating training data ({args.train_size} samples)...")
+    # 生成训练数据
+    print(f"正在生成训练数据（{args.train_size} 个样本）...")
     train_df = generate_time_series(
         n_samples=args.train_size,
         start_date='2020-01-01',
         n_features=args.n_features
     )
     
-    # Generate test data (continuation from training)
-    print(f"Generating test data ({args.test_size} samples)...")
+    # 生成测试数据（从训练数据延续）
+    print(f"正在生成测试数据（{args.test_size} 个样本）...")
     train_end_date = train_df['date'].iloc[-1]
     test_start_date = train_end_date + pd.Timedelta(hours=1)
     
@@ -122,30 +121,30 @@ def main():
         start_date=str(test_start_date),
         n_features=args.n_features
     )
-    # Adjust test data to continue from training (shift to match trend)
+    # 调整测试数据以从训练数据延续（调整以匹配趋势）
     trend_offset = train_df['target'].iloc[-1] - 10
     test_df['target'] = test_df['target'] + trend_offset * 0.5
     for col in test_df.columns:
         if col.startswith('feature_'):
             test_df[col] = test_df[col] + trend_offset * 0.25
     
-    # Save to CSV
+    # 保存为CSV
     train_path = os.path.join(args.output_dir, 'train.csv')
     test_path = os.path.join(args.output_dir, 'test.csv')
     
     train_df.to_csv(train_path, index=False)
     test_df.to_csv(test_path, index=False)
     
-    print(f"\nSample data generated successfully!")
-    print(f"Training data: {train_path}")
-    print(f"  - Samples: {len(train_df)}")
-    print(f"  - Columns: {list(train_df.columns)}")
-    print(f"\nTest data: {test_path}")
-    print(f"  - Samples: {len(test_df)}")
-    print(f"  - Columns: {list(test_df.columns)}")
+    print(f"\n样本数据生成成功！")
+    print(f"训练数据: {train_path}")
+    print(f"  - 样本数: {len(train_df)}")
+    print(f"  - 列名: {list(train_df.columns)}")
+    print(f"\n测试数据: {test_path}")
+    print(f"  - 样本数: {len(test_df)}")
+    print(f"  - 列名: {list(test_df.columns)}")
     
     print("\n" + "="*60)
-    print("To run prediction with this sample data, use:")
+    print("使用此样本数据运行预测，请执行:")
     print("="*60)
     print(f"""
 python run_custom_prediction.py \\
